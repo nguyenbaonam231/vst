@@ -1,9 +1,38 @@
-vst/
-├── .github/
-│   └── workflows/
-│       └── build-ios-dylib.yml
-├── Package.swift
-├── Sources/
-├── Tests/
-├── Scripts/
-└── README.md
+name: Build VideoStarTool iOS dylib
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-ios-arm64:
+    runs-on: xcode-27
+    timeout-minutes: 30
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Show Apple toolchain
+        run: |
+          xcodebuild -version
+          xcrun --sdk iphoneos --show-sdk-version
+          swift --version
+
+      - name: Run package tests
+        run: swift test -c release
+
+      - name: Build and validate iOS ARM64 dylib
+        run: bash Scripts/build-ios-macos-ci.sh
+
+      - name: Upload unsigned iOS dylib
+        uses: actions/upload-artifact@v4
+        with:
+          name: VideoStarTool-dylib-arm64-ios
+          path: |
+            dist/VideoStarTool.dylib
+            dist/build-info.txt
+            dist/platform-info.txt
+          if-no-files-found: error
+          retention-days: 7
