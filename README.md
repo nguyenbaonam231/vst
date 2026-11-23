@@ -76,3 +76,34 @@ The build script intentionally fails when Xcode/iOS SDK is missing. A Linux `.so
 If you do not have Xcode locally, push this project folder to a private GitHub repository and run the manual workflow at `.github/workflows/build-ios-dylib.yml`. It uses the GitHub-hosted `xcode-27` Apple Silicon runner and the iPhoneOS SDK included with Xcode, then uploads `VideoStarTool.dylib` as an unsigned artifact. See [`Docs/GITHUB_ACTIONS_BUILD.md`](Docs/GITHUB_ACTIONS_BUILD.md).
 
 This build path produces a compile artifact from the current source; it does not complete or validate the missing Video Star editor adapter, change the original binary's authorization checks, or guarantee runtime loading.
+
+## Chức năng local độc lập (bản source 1.1.0)
+
+`LocalToolKit` gom các chức năng có thể chạy không cần server:
+
+- `importMedia(_:)`: sao chép ảnh/video người dùng chọn vào kho media riêng; import theo batch có rollback nếu một tệp lỗi.
+- `rememberCode(_:)`: lưu mã gần đây trên thiết bị thông qua `RecentCodeStore`.
+- `savePreset(_:title:)`: lưu payload preset opaque tại chỗ; không diễn giải định dạng riêng của ứng dụng chủ.
+- `analyzeBeats(in:sensitivity:completion:)`: phân tích nhịp âm thanh offline bằng AVFoundation trên iOS/macOS.
+- `exportBeatMarkers(...)`: xuất beat markers thành JSON hoặc CSV.
+
+Ví dụ khởi tạo từ một host app do bạn kiểm soát:
+
+```swift
+let root = FileManager.default.urls(
+    for: .applicationSupportDirectory,
+    in: .userDomainMask
+)[0].appendingPathComponent("MyLocalVideoTools", isDirectory: true)
+let kit = try LocalToolKit(rootDirectoryURL: root)
+
+// Copy media into the host app's local sandbox.
+let imported = try kit.importMedia(selectedFileURLs)
+
+// Store a code locally (for example, from the host app's own QR callback).
+kit.rememberCode("MY-CODE-001")
+
+// Keep preset bytes locally without assuming a third-party project schema.
+let savedPreset = try kit.savePreset(presetData, title: "Preset pastel")
+```
+
+Các chức năng này không tự động sửa timeline của Video Star. `VideoStarEditorBridge` vẫn là hợp đồng tích hợp cho một host/SDK được phép; project không tự gọi private selector hoặc thay đổi purchase/subscription checks của ứng dụng khác.

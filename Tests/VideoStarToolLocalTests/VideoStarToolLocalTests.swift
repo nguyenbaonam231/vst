@@ -99,4 +99,111 @@ final class VideoStarToolLocalTests: XCTestCase {
         XCTAssertTrue(names.contains("CydiaSubstrate"))
     }
 
+    func testLocalMediaVaultCopiesImageAndVideoIntoSandbox() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+        let sourceRoot = root.appendingPathComponent("source", isDirectory: true)
+        let vaultRoot = root.appendingPathComponent("vault", isDirectory: true)
+        try FileManager.default.createDirectory(at: sourceRoot, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+
+        let image = sourceRoot.appendingPathComponent("cover.JPG")
+        let video = sourceRoot.appendingPathComponent("clip.MP4")
+        try Data([0xFF, 0xD8, 0xFF]).write(to: image)
+        try Data([0x00, 0x00, 0x00, 0x18]).write(to: video)
+
+        let vault = try LocalMediaVault(directoryURL: vaultRoot)
+        let items = try vault.importFiles([image, video])
+        XCTAssertEqual(items.count, 2)
+        XCTAssertEqual(items.map(\.kind), [.image, .video])
+        XCTAssertTrue(items.allSatisfy { FileManager.default.fileExists(atPath: vault.localURL(for: $0).path) })
+        XCTAssertEqual(items.map(\.originalName), ["cover.JPG", "clip.MP4"])
+    }
+
+    func testLocalMediaVaultRollsBackBatchOnUnsupportedFile() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+        let sourceRoot = root.appendingPathComponent("source", isDirectory: true)
+        let vaultRoot = root.appendingPathComponent("vault", isDirectory: true)
+        try FileManager.default.createDirectory(at: sourceRoot, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+
+        let image = sourceRoot.appendingPathComponent("ok.png")
+        let unknown = sourceRoot.appendingPathComponent("bad.bin")
+        try Data([1, 2, 3]).write(to: image)
+        try Data([4, 5, 6]).write(to: unknown)
+
+        let vault = try LocalMediaVault(directoryURL: vaultRoot)
+        XCTAssertThrowsError(try vault.importFiles([image, unknown]))
+        let remaining = try FileManager.default.contentsOfDirectory(atPath: vaultRoot.path)
+        XCTAssertTrue(remaining.isEmpty)
+    }
+
+    func testLocalPresetStoreRoundTripsPayloadAndDeletes() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let store = try LocalPresetStore(directoryURL: root)
+        let payload = Data("local-preset-payload".utf8)
+        let summary = try store.save(payload, title: "  Preset hồng  ")
+
+        XCTAssertEqual(summary.title, "Preset hồng")
+        XCTAssertEqual(try store.load(id: summary.id), payload)
+        XCTAssertEqual(try store.summaries().map(\.id), [summary.id])
+        try store.delete(id: summary.id)
+        XCTAssertTrue(try store.summaries().isEmpty)
+        XCTAssertThrowsError(try store.load(id: summary.id))
+    }
+
+    func testLocalPresetStoreRejectsEmptyTitleAndPayload() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let store = try LocalPresetStore(directoryURL: root)
+        XCTAssertThrowsError(try store.save(Data([1]), title: "   "))
+        XCTAssertThrowsError(try store.save(Data(), title: "Preset"))
+    }
+
+    func testBeatMarkerExporterFiltersInvalidValuesAndExportsCSV() {
+        let document = LocalBeatMarkerDocument(
+            audioFileName: "song.m4a",
+            sampleRate: 44_100,
+            sensitivity: 1.6,
+            markers: [2.1256, -1, .nan, 0.5]
+        )
+        XCTAssertEqual(document.markers, [0.5, 2.1256])
+        let csv = String(data: LocalBeatMarkerExporter.csvData(for: document), encoding: .utf8)
+        XCTAssertEqual(csv, "index,time_seconds\n1,0.500\n2,2.126\n")
+    }
+
+    func testLocalToolKitCoordinatesOfflineStoresAndBeatExport() throws {
+        final class FixedBeatAnalyzer: LocalBeatAnalyzing {
+            func analyze(audioURL: URL, sensitivity: Double, completion: @escaping (Result<[TimeInterval], Error>) -> Void) {
+                completion(.success([0.25, 0.75, 1.25]))
+            }
+        }
+
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+        let defaults = isolatedDefaults()
+        defer { try? FileManager.default.removeItem(at: root) }
+        let kit = try LocalToolKit(rootDirectoryURL: root, defaults: defaults, beatAnalyzer: FixedBeatAnalyzer())
+
+        kit.rememberCode("QR-LOCAL-001")
+        XCTAssertEqual(kit.recentCodeStore.latest()?.code, "QR-LOCAL-001")
+        let preset = try kit.savePreset(Data("preset".utf8), title: "Preset local")
+        XCTAssertEqual(try kit.presetStore.load(id: preset.id), Data("preset".utf8))
+
+        let audio = root.appendingPathComponent("audio.m4a")
+        let beatExpectation = expectation(description: "offline beat analysis")
+        kit.analyzeBeats(in: audio) { result in
+            XCTAssertEqual(try? result.get(), [0.25, 0.75, 1.25])
+            beatExpectation.fulfill()
+        }
+        wait(for: [beatExpectation], timeout: 1)
+
+        let csvURL = root.appendingPathComponent("markers.csv")
+        try kit.exportBeatMarkers(
+            audioFileName: "audio.m4a", sampleRate: 44_100, sensitivity: 1.6,
+            markers: [0.25, 0.75, 1.25], format: .csv, to: csvURL
+        )
+        let csv = try String(contentsOf: csvURL, encoding: .utf8)
+        XCTAssertTrue(csv.contains("2,0.750"))
+    }
+
 }

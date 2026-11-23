@@ -4,7 +4,7 @@
 <dict>
   <key>ToolName</key><string>VideoStar Tool Local</string>
   <key>ToolAuthor</key><string>j4avzckcy</string>
-  <key>ToolVersion</key><string>1.0.0-local</string>
+  <key>ToolVersion</key><string>1.1.0-local</string>
   <key>NetworkMode</key><string>Local components only</string>
 </dict>
 </plist>
