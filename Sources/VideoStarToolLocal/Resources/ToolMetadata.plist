@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>ToolName</key><string>VideoStar Tool Local</string>
+  <key>ToolAuthor</key><string>j4avzckcy</string>
+  <key>ToolVersion</key><string>1.0.0-local</string>
+  <key>NetworkMode</key><string>Local components only</string>
+</dict>
+</plist>

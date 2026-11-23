@@ -1,0 +1,133 @@
+{
+  "target": {
+    "bundle_id": "com.frontierdesign.videostar",
+    "version": "15.0.3",
+    "build": "1847",
+    "architecture": "arm64",
+    "minimum_ios": "17.2"
+  },
+  "methods": [
+    {
+      "class": "MultiLayerEngine",
+      "selector": "layerAtLayerNum:",
+      "type_encoding": "@24@0:8Q16"
+    },
+    {
+      "class": "MultiLayerEngine",
+      "selector": "layerTypeForLayer:",
+      "type_encoding": "i24@0:8Q16"
+    },
+    {
+      "class": "MultiLayerEngine",
+      "selector": "setupImage:layerNum:layerType:clearMask:",
+      "type_encoding": "@40@0:8@16Q24i32B36"
+    },
+    {
+      "class": "MultiLayerEngine",
+      "selector": "setupVideoLayer:forLayer:withInitialVolume:multiCheck:",
+      "type_encoding": "@40@0:8@16Q24f32B36"
+    },
+    {
+      "class": "MultiLayerEngine",
+      "selector": "setupPresetLayer:fromLayer:",
+      "type_encoding": "v32@0:8@16@24"
+    },
+    {
+      "class": "MultiLayerEngine",
+      "selector": "copyContentFromLayerNum:toLayerNum:forScene:",
+      "type_encoding": "v40@0:8Q16Q24Q32"
+    },
+    {
+      "class": "MultiLayerWizEffectVC",
+      "selector": "getMultiLayerEngine",
+      "type_encoding": "@16@0:8"
+    },
+    {
+      "class": "MultiLayerWizEffectVC",
+      "selector": "importNewPreset:keyFrameAction:qrDurationInFrames:",
+      "type_encoding": "v40@0:8@16@24q32"
+    },
+    {
+      "class": "MultiLayerWizEffectVC",
+      "selector": "selectLayerNum:flash:",
+      "type_encoding": "v28@0:8Q16B24"
+    },
+    {
+      "class": "MultiLayerWizEffectVC",
+      "selector": "makePhotoLayer:",
+      "type_encoding": "v24@0:8@16"
+    },
+    {
+      "class": "MultiLayerWizEffectVC",
+      "selector": "makeVideoLayer:frameTimes:volume:",
+      "type_encoding": "v40@0:8@16@24@32"
+    },
+    {
+      "class": "QRCodeManager",
+      "selector": "readQRCode:",
+      "type_encoding": "@24@0:8@16"
+    },
+    {
+      "class": "QRCodeManager",
+      "selector": "validQRCheck:",
+      "type_encoding": "B24@0:8@16"
+    },
+    {
+      "class": "QRCodeManager",
+      "selector": "selectedCode:withImageData:",
+      "type_encoding": "v32@0:8@16@24"
+    },
+    {
+      "class": "QRCodeManager",
+      "selector": "saveCodeToPlist:desc:",
+      "type_encoding": "v32@0:8@16@24"
+    }
+  ],
+  "runtime_images": [
+    {
+      "name": "VSPlusUltra",
+      "paths": [
+        "VSPlusUltra.dylib"
+      ]
+    },
+    {
+      "name": "VSFix1",
+      "paths": [
+        "VSFix1.dylib",
+        "ipacrack_ioscodevn.dylib"
+      ]
+    },
+    {
+      "name": "VSFix2",
+      "paths": [
+        "VSFix2.dylib",
+        "LeTi.dylib"
+      ]
+    },
+    {
+      "name": "VSFix3",
+      "paths": [
+        "VSFix3.dylib",
+        "FireStore.dylib"
+      ]
+    },
+    {
+      "name": "VSFix4",
+      "paths": [
+        "VSFix4.dylib",
+        "libsubstrate.dylib"
+      ]
+    },
+    {
+      "name": "CydiaSubstrate",
+      "paths": [
+        "CydiaSubstrate.framework/CydiaSubstrate"
+      ]
+    }
+  ],
+  "notes": [
+    "Method encodings are static observations from the supplied app executable, not a public SDK.",
+    "Runtime inspection checks presence/signatures only and never invokes these private methods.",
+    "No StoreModel purchase or subscription hooks are included."
+  ]
+}
